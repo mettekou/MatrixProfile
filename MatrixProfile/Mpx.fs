@@ -83,8 +83,8 @@ module Mpx =
         df[0] <- 0.
         dg[0] <- 0.
         Parallel.ForEach (seq {windowSize..(n - 1)}, fun i ->
-            df[i - windowSize + 1] <- (0.5 * (series[i] - series[i - windowSize]))
-            dg[i - windowSize + 1] <- (series[i] - mu[i - windowSize + 1]) + (series[i - windowSize] - mu[i - windowSize])) |> ignore
+            df.[i - windowSize + 1] <- (0.5 * (series.[i] - series.[i - windowSize]))
+            dg.[i - windowSize + 1] <- (series.[i] - mu.[i - windowSize + 1]) + (series.[i - windowSize] - mu.[i - windowSize])) |> ignore
         
         let mutable lastThread = 0
         use lastThreadSemaphore = new SemaphoreSlim(0, 1)
@@ -103,40 +103,40 @@ module Mpx =
                             let mutable c_cmp' = c_cmp
                             let mutable col' = col
                             for i in diag..((diag + windowSize) - 1) do
-                                c' <- c' + ((series[i] - mu[diag]) * (series[i-diag] - mu[0]))
+                                c' <- c' + ((series.[i] - mu.[diag]) * (series.[i-diag] - mu.[0]))
 
                             for offset in 0..(n - windowSize - diag) do
                                 col' <- offset + diag
-                                c' <- c' + df[offset] * dg[col'] + df[col'] * dg[offset]
-                                c_cmp' <- c' * sigma[offset] * sigma[col']
+                                c' <- c' + df.[offset] * dg.[col'] + df.[col'] * dg.[offset]
+                                c_cmp' <- c' * sigma.[offset] * sigma.[col']
                                 
                                 // update the distance profile and profile index
-                                if c_cmp' > tmpMp[threadnum, offset] then
-                                    tmpMp[threadnum, offset] <- c_cmp'
-                                    tmpMpi[threadnum, offset] <- col'
+                                if c_cmp' > tmpMp.[threadnum, offset] then
+                                    tmpMp.[threadnum, offset] <- c_cmp'
+                                    tmpMpi.[threadnum, offset] <- col'
                                 
-                                if c_cmp' > tmpMp[threadnum, col'] then
+                                if c_cmp' > tmpMp.[threadnum, col'] then
                                     if c_cmp' > 1.0 then
                                         c_cmp' <- 1.0
-                                    tmpMp[threadnum, col'] <- c_cmp'
-                                    tmpMpi[threadnum, col'] <- offset
+                                    tmpMp.[threadnum, col'] <- c_cmp'
+                                    tmpMpi.[threadnum, col'] <- offset
                             threadnum, c', c_cmp', col'),
                             fun _ -> ()) |> ignore
         
         // combine parallel results...
         for i in 0..(Array2D.length1 tmpMp - 1) do
             for j in 0..(Array2D.length2 tmpMp - 1) do
-                if tmpMp[i,j] > mp[j] then
-                    if tmpMp[i, j] > 1.0 then
-                        mp[j] <- 1.0
+                if tmpMp.[i,j] > mp.[j] then
+                    if tmpMp.[i, j] > 1.0 then
+                        mp.[j] <- 1.0
                     else
-                        mp[j] <- tmpMp[i, j]
-                    mpi[j] <- tmpMpi[i, j]
+                        mp.[j] <- tmpMp.[i, j]
+                    mpi.[j] <- tmpMpi.[i, j]
         
         // convert normalized cross correlation to euclidean distance
         if euclideanDistance then
             for i in 0..(profileLen - 1) do
-                mp[i] <- sqrt(2.0 * float windowSize * (1.0 - mp[i]))
+                mp.[i] <- sqrt(2.0 * float windowSize * (1.0 - mp[i]))
         
         { MatrixProfile = mp; MatrixProfileIndex = mpi }
 
