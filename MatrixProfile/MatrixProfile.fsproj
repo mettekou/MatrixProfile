@@ -5,7 +5,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Authors>Dylan Meysmans</Authors>
     <Description>The matrix profile data structure and associated algorithms for mining time series data implemented in F#</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>Copyright 2022 © Dylan Meysmans. All Rights Reserved.</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/mettekou/MatrixProfile.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <MinVerTagPrefix>v</MinVerTagPrefix>
