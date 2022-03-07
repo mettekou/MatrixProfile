@@ -20,9 +20,9 @@ jobs:
     - name: Restore tools
       run: dotnet tool restore
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore -c Release
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build -c Release --no-restore
     - name: Run fsdocs
       run: dotnet fsdocs build --eval --strict --properties Configuration=Release
     - name: Test
