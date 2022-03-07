@@ -138,16 +138,9 @@ module Mpx =
             for i in 0..(profileLen - 1) do
                 mp[i] <- sqrt(2.0 * float windowSize * (1.0 - mp[i]))
         
-        (mp, mpi)
-    
-    (*type Storage = {
-        Tmp_Mp: float array
-        Tmp_Mpi: int array
-        Tmp_Mpb: float array
-        Tmp_Mpbi: int array
-    }
+        { MatrixProfile = mp; MatrixProfileIndex = mpi }
 
-    let abJoin ts query w cross_correlation =
+    (*let abJoin ts query w cross_correlation =
         let mutable i, j, k, mx, threadnum = 0, 0, 0, 0, 0
         let n = Array.length ts
         let qn = Array.length query
