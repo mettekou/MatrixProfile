@@ -21,7 +21,7 @@ module Mpx =
             s <- s + ((p - (x - z)) + (a.[i] - z))
             p <- x
         
-        mu[0] <- (p + s) / float w
+        mu.[0] <- (p + s) / float w
         for i in w..(n - 1) do
             x <- p - a.[i - w + 1]
             z <- x - p
@@ -54,7 +54,7 @@ module Mpx =
                 s <- s + (((p - (x - z)) + (h.[j] - z)) + r.[j])
                 p <- x
 
-            if p + s = 0 then
+            if p + s = 0. then
                 sigma.[i] <- 0.
             else
                 sigma.[i] <- 1. / sqrt(p + s)
@@ -80,8 +80,8 @@ module Mpx =
         let tmpMpi = Array2D.create nJobs profileLen -1
         
         // this is where we compute the diagonals and later the matrix profile
-        df[0] <- 0.
-        dg[0] <- 0.
+        df.[0] <- 0.
+        dg.[0] <- 0.
         Parallel.ForEach (seq {windowSize..(n - 1)}, fun i ->
             df.[i - windowSize + 1] <- (0.5 * (series.[i] - series.[i - windowSize]))
             dg.[i - windowSize + 1] <- (series.[i] - mu.[i - windowSize + 1]) + (series.[i - windowSize] - mu.[i - windowSize])) |> ignore
@@ -136,7 +136,7 @@ module Mpx =
         // convert normalized cross correlation to euclidean distance
         if euclideanDistance then
             for i in 0..(profileLen - 1) do
-                mp.[i] <- sqrt(2.0 * float windowSize * (1.0 - mp[i]))
+                mp.[i] <- sqrt(2.0 * float windowSize * (1.0 - mp.[i]))
         
         { MatrixProfile = mp; MatrixProfileIndex = mpi }
 
