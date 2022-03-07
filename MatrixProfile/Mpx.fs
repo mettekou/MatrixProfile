@@ -13,51 +13,51 @@ module Mpx =
         let r = Array.zeroCreate n
         let mu = Array.zeroCreate profile_len
         let sigma = Array.zeroCreate profile_len
-        let mutable p = a[0]
+        let mutable p = a.[0]
         let mutable s = 0.
         for i in 1..(w - 1) do
-            x <- p + a[i]
+            x <- p + a.[i]
             z <- x - p
-            s <- s + ((p - (x - z)) + (a[i] - z))
+            s <- s + ((p - (x - z)) + (a.[i] - z))
             p <- x
         
         mu[0] <- (p + s) / float w
         for i in w..(n - 1) do
-            x <- p - a[i - w + 1]
+            x <- p - a.[i - w + 1]
             z <- x - p
-            s <- s + ((p - (x - z)) - (a[i - w] + z))
+            s <- s + ((p - (x - z)) - (a.[i - w] + z))
             p <- x
 
-            x <- p + a[i]
+            x <- p + a.[i]
             z <- x - p
-            s <- s + ((p - (x - z)) + (a[i] - z))
+            s <- s + ((p - (x - z)) + (a.[i] - z))
             p <- x
 
-            mu[i - w + 1] <- (p + s) / float w
+            mu.[i - w + 1] <- (p + s) / float w
         
         for i in 0..(profile_len - 1) do
             for j in i..((i + w) - 1) do
-                mu_a <- a[j] - mu[i]
-                h[j] <- mu_a * mu_a
+                mu_a <- a.[j] - mu.[i]
+                h.[j] <- mu_a * mu_a
 
                 c <- float (pown 2 27 + 1) * mu_a
                 a1 <- (c - (c - mu_a))
                 a2 <- (mu_a - a1)
                 a3 <- a1 * a2
-                r[j] <- a2 * a2 - (((h[j] - a1 * a1) - a3) - a3)
+                r.[j] <- a2 * a2 - (((h.[j] - a1 * a1) - a3) - a3)
 
-            p <- h[i]
-            s <- r[i]
+            p <- h.[i]
+            s <- r.[i]
             for j in (i + 1)..((i + w) - 1) do
-                x <- p + h[j]
+                x <- p + h.[j]
                 z <- x - p
-                s <- s + (((p - (x - z)) + (h[j] - z)) + r[j])
+                s <- s + (((p - (x - z)) + (h.[j] - z)) + r.[j])
                 p <- x
 
             if p + s = 0 then
-                sigma[i] <- 0.
+                sigma.[i] <- 0.
             else
-                sigma[i] <- 1. / sqrt(p + s)
+                sigma.[i] <- 1. / sqrt(p + s)
         
         (mu, sigma)
 
