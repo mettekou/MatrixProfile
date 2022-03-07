@@ -26,7 +26,7 @@ jobs:
     - name: Run fsdocs
       run: dotnet fsdocs build --eval --strict --properties Configuration=Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test -c Release --no-build --verbosity normal
     - name: Deploy docs
       uses: peaceiris/actions-gh-pages@v3
       with:
