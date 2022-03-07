@@ -1,3 +1,1 @@
-# `MatrixProfile`
-
-
+# `MatrixProfile` [![](https://buildstats.info/nuget/MatrixProfile?includePreReleases=true)](https://www.nuget.org/packages/MatrixProfile)
