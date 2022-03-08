@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Include="SelfJoin.fs" />
+    <Compile Include="SimilarityJoin.fs" />
     <Compile Include="Mpx.fs" />
     <Compile Include="MatrixProfile.fs" />
   </ItemGroup>

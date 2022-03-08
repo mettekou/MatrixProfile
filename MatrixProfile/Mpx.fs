@@ -140,15 +140,14 @@ module Mpx =
         
         { MatrixProfile = mp; MatrixProfileIndex = mpi }
 
-    (*let abJoin ts query w cross_correlation =
-        let mutable i, j, k, mx, threadnum = 0, 0, 0, 0, 0
-        let n = Array.length ts
+    let similarityJoin series query windowSize euclideanDistance nJobs =
+        let mutable k = 0
+        let n = Array.length series
         let qn = Array.length query
-        let mutable cov_, corr_, eucdist, mxdist = 0., 0., 0., 0.
-        let profile_len = n - w + 1
-        let profile_lenb = qn - w + 1
-        let (mua, siga) = muinvn ts w
-        let (mub, sigb) = muinvn query w
+        let profile_len = n - windowSize + 1
+        let profile_lenb = qn - windowSize + 1
+        let mua, siga = muinvn series windowSize
+        let mub, sigb = muinvn query windowSize
         let diff_fa = Array.zeroCreate profile_len
         let diff_ga = Array.zeroCreate profile_len
         let diff_fb = Array.zeroCreate profile_lenb
@@ -158,84 +157,190 @@ module Mpx =
         let mpb = Array.create profile_lenb -1.
         let mpib = Array.create profile_lenb -1
 
-        diff_fa[0] <- 0.
-        diff_ga[0] <- 0.
-        Parallel.ForEach (seq {w..(n - 1)}, fun i ->
-        diff_fa[i - w + 1] <- 0.5 * (ts[i] - ts[i - w])
-        diff_ga[i - w + 1] <- (ts[i] - mua[i - w + 1]) + (ts[i - w] - mua[i - w])
-        ) |> ignore
+        let tmp_mp = Array2D.create nJobs profile_len -1.
+        let tmp_mpi = Array2D.create nJobs profile_len -1
+        let tmp_mpb = Array2D.create nJobs profile_lenb -1.
+        let tmp_mpib = Array2D.create nJobs profile_lenb -1
 
-        diff_fb[0] <- 0.
-        diff_gb[0] <- 0.
-        Parallel.ForEach (seq {w..(qn - 1)}, fun i ->
-        diff_fb[i - w + 1] <- 0.5 * (query[i] - query[i - w])
-        diff_gb[i - w + 1] <- (query[i] - mub[i - w + 1]) + (query[i - w] - mub[i - w])
-        ) |> ignore
+        diff_fa.[0] <- 0.
+        diff_ga.[0] <- 0.
 
-        Parallel.ForEach ((seq {0..profile_len}), (fun () -> { Tmp_Mp = Array.create profile_len -1.; Tmp_Mpi = Array.create profile_len -1; Tmp_Mpb = Array.create profile_lenb -1.; Tmp_Mpbi = Array.create profile_lenb -1}), (fun i state index { Tmp_Mp = tmp_mp; Tmp_Mpi = tmp_mpi; Tmp_Mpb = tmp_mpb; Tmp_Mpbi = tmp_mpib} ->
-            let mx = if profile_len - i < profile_lenb then profile_len - i else profile_lenb
-            cov_ <- 0.
-            for j in i..((i + w) - 1) do
-                cov_ <- cov_ + ((ts[j] - mua[i]) * (query[j-i] - mub[0]))
-        for i in 0..(Array2D.length1 tmp_mp - 1) do
-            for j in 0..(Array2D.length2 tmp_mp) do
-                if tmp_mp[i,j] > mp[j] then
-                    if tmp_mp[i, j] > 1.0 then
-                        mp[j] <- 1.0
+        Parallel.ForEach(
+            seq { windowSize .. (n - 1) },
+            fun i ->
+                diff_fa.[i - windowSize + 1] <- 0.5 * (series.[i] - series.[i - windowSize])
+
+                diff_ga.[i - windowSize + 1] <-
+                    (series.[i] - mua.[i - windowSize + 1])
+                    + (series.[i - windowSize] - mua.[i - windowSize])
+        )
+        |> ignore
+
+        diff_fb.[0] <- 0.
+        diff_gb.[0] <- 0.
+
+        Parallel.ForEach(
+            seq { windowSize .. (qn - 1) },
+            fun i ->
+                diff_fb.[i - windowSize + 1] <- 0.5 * (query.[i] - query.[i - windowSize])
+
+                diff_gb.[i - windowSize + 1] <-
+                    (query.[i] - mub.[i - windowSize + 1])
+                    + (query.[i - windowSize] - mub.[i - windowSize])
+        )
+        |> ignore
+
+        let mutable lastThread = 0
+        use lastThreadSemaphore = new SemaphoreSlim(0, 1)
+        lastThreadSemaphore.Release() |> ignore
+
+        Parallel.ForEach(
+            (seq { 0 .. (profile_len - 1) }),
+            ParallelOptions(MaxDegreeOfParallelism = nJobs),
+            (fun () ->
+                lastThreadSemaphore.Wait()
+                let lastThread' = lastThread
+                lastThread <- lastThread + 1
+                lastThreadSemaphore.Release() |> ignore
+                lastThread'),
+            (fun i state index threadnum ->
+                let mx =
+                    if profile_len - i < profile_lenb then
+                        profile_len - i
                     else
-                        mp[j] <- tmp_mp[i, j]
-                    mpi[j] <- tmp_mpi[i, j]
-            for j in 0 .. (mx - 1) do
-                k <- j + i
-                cov_ <- cov_ + diff_fa[k] * diff_gb[j] + diff_ga[k] * diff_fb[j]
-                corr_ <- cov_ * siga[k] * sigb[j]
+                        profile_lenb
 
-                if corr_ > tmp_mp[k] then
-                    tmp_mp[k] <- corr_
-                    tmp_mpi[k] <- j
+                let mutable cov_ = 0.
 
-                if corr_ > tmp_mpb[j] then
-                    tmp_mpb[j] <- corr_
-                    tmp_mpib[j] <- k
-            { Tmp_Mp = tmp_mp; Tmp_Mpi = tmp_mpi; Tmp_Mpb = tmp_mpb; Tmp_Mpbi = tmp_mpib}), fun _ -> ()) |> ignore
+                for j in i .. ((i + windowSize) - 1) do
+                    cov_ <-
+                        cov_
+                        + ((series.[j] - mua.[i]) * (query.[j - i] - mub.[0]))
 
-        Parallel.ForEach ((seq {0..profile_lenb}), (fun () -> { Tmp_Mp = Array.create profile_len -1.; Tmp_Mpi = Array.create profile_len -1; Tmp_Mpb = Array.create profile_lenb -1.; Tmp_Mpbi = Array.create profile_lenb -1}), (fun i state index { Tmp_Mp = tmp_mp; Tmp_Mpi = tmp_mpi; Tmp_Mpb = tmp_mpb; Tmp_Mpbi = tmp_mpib} ->
-            let mx = if profile_lenb - i < profile_len then profile_lenb - i else profile_len
-            cov_ <- 0.
-            for j in i..((i + w) - 1) do
-                cov_ <- cov_ + ((query[j] - mub[i]) * (ts[j-i] - mua[0]))
+                for i in 0 .. (Array2D.length1 tmp_mp - 1) do
+                    for j in 0 .. (Array2D.length2 tmp_mp - 1) do
+                        if tmp_mp.[i, j] > mp.[j] then
+                            if tmp_mp.[i, j] > 1.0 then
+                                mp.[j] <- 1.0
+                            else
+                                mp.[j] <- tmp_mp.[i, j]
 
-            for j in 0 .. (mx - 1) do
-                k <- j + i
-                cov_ <- cov_ + diff_fb[k] * diff_ga[j] + diff_gb[k] * diff_fa[j]
-                corr_ <- cov_ * sigb[k] * siga[j]
+                            mpi.[j] <- tmp_mpi.[i, j]
 
-                if corr_ > tmp_mpb[k] then
-                    tmp_mpb[k] <- corr_
-                    tmp_mpib[k] <- j
+                for j in 0 .. (mx - 1) do
+                    let k = j + i
 
-                if corr_ > tmp_mp[j] then
-                    tmp_mp[j] <- corr_
-                    tmp_mpi[j] <- k
-            { Tmp_Mp = tmp_mp; Tmp_Mpi = tmp_mpi; Tmp_Mpb = tmp_mpb; Tmp_Mpbi = tmp_mpib}), fun _ -> ()) |> ignore
+                    cov_ <-
+                        cov_
+                        + diff_fa.[k] * diff_gb.[j]
+                        + diff_ga.[k] * diff_fb.[j]
 
-        for i in 0..(Array.length tmp_mp - 1) do
-                for j in 0..range(tmp_mp.shape[1]) do
-                    if tmp_mp[i,j] > mp[j] then
-                        if tmp_mp[i, j] > 1.0 then
-                            mp[j] = 1.0
-                        else
-                            mp[j] = tmp_mp[i, j]
-                        
-                        mpi[j] = tmp_mpi[i, j]
-            
-        for i in 0..(Array.length tmp_mpb - 1) do
-                for j in 0..range(tmp_mpb.shape[1]) do
-                    if tmp_mpb[i,j] > mpb[j] then
-                        if tmp_mpb[i, j] > 1.0 then
-                            mpb[j] = 1.0
-                        else
-                            mpb[j] = tmp_mpb[i, j]
-                        
-                        mpib[j] = tmp_mpib[i, j]
-        (mp, mpi, mpb, mpib)*)
+                    let corr_ = cov_ * siga.[k] * sigb.[j]
+
+                    if corr_ > tmp_mp.[threadnum, k] then
+                        tmp_mp.[threadnum, k] <- corr_
+                        tmp_mpi.[threadnum, k] <- j
+
+                    if corr_ > tmp_mpb.[threadnum, j] then
+                        tmp_mpb.[threadnum, j] <- corr_
+                        tmp_mpib.[threadnum, j] <- k
+
+                threadnum),
+            fun _ -> ()
+        )
+        |> ignore
+
+        lastThreadSemaphore.Wait()
+        lastThread <- 0
+        lastThreadSemaphore.Release() |> ignore
+        
+        Parallel.ForEach(
+            (seq { 0 .. (profile_lenb - 1) }),
+            ParallelOptions(MaxDegreeOfParallelism = nJobs),
+            (fun () ->
+                lastThreadSemaphore.Wait()
+                let lastThread' = lastThread
+                lastThread <- lastThread + 1
+                lastThreadSemaphore.Release() |> ignore
+                lastThread'),
+            (fun i state index threadnum ->
+                let mx =
+                    if profile_lenb - i < profile_len then
+                        profile_lenb - i
+                    else
+                        profile_len
+
+                let mutable cov_ = 0.
+
+                for j in i .. ((i + windowSize) - 1) do
+                    cov_ <-
+                        cov_
+                        + ((query.[j] - mub.[i]) * (series.[j - i] - mua.[0]))
+
+                for j in 0 .. (mx - 1) do
+                    k <- j + i
+
+                    cov_ <-
+                        cov_
+                        + diff_fb.[k] * diff_ga.[j]
+                        + diff_gb.[k] * diff_fa.[j]
+
+                    let corr_ = cov_ * sigb.[k] * siga.[j]
+
+                    if corr_ > tmp_mpb.[threadnum, k] then
+                        tmp_mpb.[threadnum, k] <- corr_
+                        tmp_mpib.[threadnum, k] <- j
+
+                    if corr_ > tmp_mp.[threadnum, j] then
+                        tmp_mp.[threadnum, j] <- corr_
+                        tmp_mpi.[threadnum, j] <- k
+
+                threadnum),
+            fun _ -> ()
+        )
+        |> ignore
+
+        for i in 0 .. (Array2D.length1 tmp_mp - 1) do
+            for j in 0 .. (Array2D.length2 tmp_mp - 1) do
+                if tmp_mp.[i, j] > mp.[j] then
+                    if tmp_mp.[i, j] > 1.0 then
+                        mp.[j] <- 1.0
+                    else
+                        mp.[j] <- tmp_mp.[i, j]
+
+                    mpi.[j] <- tmp_mpi.[i, j]
+
+        for i in 0 .. (Array2D.length1 tmp_mpb - 1) do
+            for j in 0 .. (Array2D.length2 tmp_mpb - 1) do
+                if tmp_mpb.[i, j] > mpb.[j] then
+                    if tmp_mpb.[i, j] > 1.0 then
+                        mpb.[j] <- 1.0
+                    else
+                        mpb.[j] <- tmp_mpb.[i, j]
+
+                    mpib.[j] <- tmp_mpib.[i, j]
+
+        // convert normalized cross correlation to euclidean distance
+        if euclideanDistance then
+            for i in 0 .. (profile_len - 1) do
+                if mp.[i] = -1.0 then
+                    mp.[i] <- infinity
+                else
+                    mp.[i] <- sqrt (2.0 * float windowSize * (1.0 - mp.[i]))
+
+            for i in 0 .. (profile_lenb - 1) do
+                if mpb.[i] = -1.0 then
+                    mpb.[i] <- infinity
+                else
+                    mpb.[i] <- sqrt (2.0 * float windowSize * (1.0 - mpb.[i]))
+        else
+            for i in 0 .. (profile_len - 1) do
+                if mp.[i] > 1.0 then mp.[i] <- 1.0
+
+            for i in 0 .. (profile_lenb - 1) do
+                if mpb.[i] > 1.0 then mpb.[i] <- 1.0
+
+        { MatrixProfile = mp
+          MatrixProfileIndex = mpi
+          MatrixProfileB = mpb
+          MatrixProfileIndexB = mpib }
