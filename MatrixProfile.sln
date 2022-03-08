@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LICENSE = LICENSE
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MatrixProfile.Benchmarks", "MatrixProfile.Benchmarks\MatrixProfile.Benchmarks.fsproj", "{095E23DD-3BFD-4E46-B26D-C66F6E973E8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{B723AD95-AF30-4048-B5DC-514FAAAA0F57}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B723AD95-AF30-4048-B5DC-514FAAAA0F57}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B723AD95-AF30-4048-B5DC-514FAAAA0F57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{095E23DD-3BFD-4E46-B26D-C66F6E973E8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{095E23DD-3BFD-4E46-B26D-C66F6E973E8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{095E23DD-3BFD-4E46-B26D-C66F6E973E8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{095E23DD-3BFD-4E46-B26D-C66F6E973E8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
