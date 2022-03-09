@@ -7,7 +7,7 @@ open BenchmarkDotNet.Jobs
 
 open MatrixProfile
 
-[<SimpleJob(RuntimeMoniker.Net60, baseline = true)>]
+[<SimpleJob(RuntimeMoniker.Net50, baseline = true)>]
 [<RPlotExporter>]
 type VaryingWindowSize() =
     member val Jobs = 4
