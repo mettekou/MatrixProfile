@@ -7,9 +7,11 @@
     <Description>The matrix profile data structure and associated algorithms for mining time series data implemented in F#</Description>
     <Copyright>Copyright 2022 © Dylan Meysmans. All Rights Reserved.</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://mettekou.github.io/MatrixProfile</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mettekou/MatrixProfile</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -21,6 +23,7 @@
     <Compile Include="SimilarityJoin.fs" />
     <Compile Include="Mpx.fs" />
     <Compile Include="MatrixProfile.fs" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
