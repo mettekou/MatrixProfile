@@ -9,6 +9,15 @@
     <ItemGroup>
         <Compile Include="Mpx.fs" />
         <Compile Include="Main.fs" />
+        <Content Include="sampledata.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="mpx_ab_mpa.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="mpx_ab_mpb.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
