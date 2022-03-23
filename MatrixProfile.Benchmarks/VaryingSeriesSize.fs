@@ -7,7 +7,7 @@ open BenchmarkDotNet.Jobs
 
 open MatrixProfile
 
-[<SimpleJob(RuntimeMoniker.Net50, baseline = true)>]
+[<SimpleJob(RuntimeMoniker.Net60, baseline = true)>]
 [<RPlotExporter>]
 type VaryingSeriesSize() =
     member val Jobs = 4
